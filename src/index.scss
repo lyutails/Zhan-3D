@@ -1,0 +1,23 @@
+.star {
+    width: 800px;
+    height: 500px;
+    background-color: rgba(0, 5, 8, 0.5);
+}
+
+.rotate_button {
+    width: 200px;
+    height: 80px;
+    //background-color: #3748c7;
+    background-color: #fff22a;    
+    border-radius: 10px;
+    border: /*dotted*/ solid 8px #3748c7;
+    font-size: 40px;
+    color: #3748c7;
+    font-weight: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0 auto;
+    cursor: pointer;
+    box-shadow: 0 0 36px rgb(81, 81, 81), 0 0 16px rgb(255, 45, 45);
+}
