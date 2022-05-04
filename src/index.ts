@@ -71,7 +71,7 @@ class Main{
     }  
     stop(){
         cancelAnimationFrame(this.lastAnimation);
-    }    
+    }       
 };
 
 const main = new Main(document.body);
