@@ -31,8 +31,28 @@ class Main{
     private angle: number = 0;
     vbuffer: DOMPoint[];
     ibuffer: number[];
-    constructor(parent: HTMLElement){
+    points: {pos: DOMPoint, angle: number}[]=[];
+    rot: DOMPoint = new DOMPoint();
+    keys: Record<string, boolean>;
+    position: DOMPoint = new DOMPoint();
+    constructor(parent: HTMLElement){        
+        const keys: Record<string, boolean> = {};
+        document.onkeyup = (e) => {
+            keys [e.code] = false;
+        }
+        document.onkeydown = (e) => {
+            keys [e.code] = true;
+        }
+        this.keys = keys;        
+        for (let i=0; i<10; i+=1){
+            const random = new DOMPoint(Math.random()*10-5, Math.random()*10-5, Math.random()*10+5);
+            this.points.push({pos: random, angle: 0});
+        }
         const canvas = document.createElement('canvas');
+        canvas.onmousemove = (e) => {
+            this.rot.x += e.movementX*0.01
+            this.rot.y += e.movementY*0.01
+        };
         canvas.width = (2500);
         canvas.height = (1200);        
         const context = canvas.getContext('2d');
@@ -70,23 +90,33 @@ class Main{
         this.ibuffer = ibuffer;
     }
 
-        private render(){
+    private handleKey(){
+        const direction = new DOMPoint();
+        if (this.keys["KeyW"]){
+            direction.y += 0.1;
+        }
+        if (this.keys["KeyA"]){
+            direction.x += 0.1;
+        }
+        if (this.keys["KeyS"]){
+            direction.y -= 0.1;
+        }
+        if (this.keys["KeyD"]){
+            direction.x -= 0.1;
+        }
+        this.position.x += direction.x;
+        this.position.y += direction.y;
+    }
+
+    private cube(projection: DOMMatrix, position: DOMPoint, angle: number){
         const context = this.context;
-        const canvas = this.context.canvas;
-        const center = new Vector(canvas.width / 2, canvas.height /2);
-        context.fillRect(0, 0, canvas.width, canvas.height);
         const matrix = new DOMMatrix().         
-        translate(0, 0, 10).rotate(this.angle, this.angle, 0);
-        const projection = perspective(Math.PI/2, canvas.width/canvas.height, 1, 1000);
-        this.angle += 1;
-        const vbuffer = this.vbuffer.map(v => {
-            const result = projection.multiply(matrix).transformPoint(v);
-            return new DOMPoint(
-                (((result.x/result.w)*0.5)+0.5)*canvas.width, 
-                ((result.y/result.w)*(-0.5)+0.5)*canvas.height
-            );
-            //return result;
-        })                      
+        translate(position.x, position.y, position.z).rotate(angle, angle, 0);        
+        //this.angle += 1;
+        const vbuffer = this.vbuffer.map(v => {            
+            return this.transform(projection, matrix, v);
+        })          
+        
         for (let i=0; i<this.ibuffer.length; i+=3) {
             const i1 = this.ibuffer[i];
             const i2 = this.ibuffer[i+1];
@@ -99,8 +129,32 @@ class Main{
             context.stroke();
             context.closePath();  
         };                
-        this.lastAnimation = requestAnimationFrame(() => {
-            this.render();
+    }
+
+    private transform(projection: DOMMatrix, matrix: DOMMatrix, vector: DOMPoint) {
+        const context = this.context;
+        const canvas = this.context.canvas;
+        const result = projection.multiply(matrix).transformPoint(vector);
+            return new DOMPoint(
+                (((result.x/result.w)*0.5)+0.5)*canvas.width,
+                ((result.y/result.w)*(-0.5)+0.5)*canvas.height
+            );
+    }
+
+        private render(){
+            this.handleKey();        
+            const context = this.context;
+            const canvas = this.context.canvas;
+            const center = new Vector(canvas.width / 2, canvas.height /2);
+            context.fillRect(0, 0, canvas.width, canvas.height); 
+            const projection = perspective(Math.PI/2, canvas.width/canvas.height, 1, 1000);
+            const camera = new DOMMatrix().translate(this.position.x, 0, this.position.y).rotate(this.rot.y, this.rot.x);
+            this.points.forEach((cube, i) => {
+                cube.angle += (i*0.1);
+                this.cube(projection.multiply(camera), cube.pos, cube. angle);
+            });       
+            this.lastAnimation = requestAnimationFrame(() => {
+                this.render();
         });
         canvas.toDataURL();                        
     }  
@@ -114,14 +168,9 @@ class Main{
 
 const main = new Main(document.body);
 
-/*const a = 10;
-function Zhan(b: string): boolean{
-    return true;
-}*/
-
 function buttonCreate(onClick: () => void): HTMLElement{
     const button = document.createElement('button');
-    button.textContent = 'make me 3D';
+    button.textContent = 'move me WASD 3D';
     button.className = 'rotate_button';
     button.onclick = () => {
         onClick();        
